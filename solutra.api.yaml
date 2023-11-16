@@ -1,0 +1,190 @@
+openapi: 3.0.3
+info:
+  title: Solutra Sales Production Report API
+  description: API for generating detailed sales production reports in the Solutra system.
+  version: "1.0.0"
+servers:
+  - url: https://api.solutra.com/v1
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ProductionReportRequest:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date
+              example: "2023-01-01"
+            end_date:
+              type: string
+              format: date
+              example: "2023-01-31"
+          required:
+            - start_date
+            - end_date
+        policy_type:
+          type: string
+          example: "all_policies"
+        policy_status:
+          type: string
+          example: "issued"
+        data_consideration:
+          type: string
+          example: "issue_date"
+        insurer:
+          type: string
+          example: "all_insurers"
+        classification:
+          type: string
+          example: "sales_structure"
+        person_type:
+          type: string
+          example: "both"
+        insurance_branch:
+          type: string
+          example: "all_branches"
+        report_format:
+          type: string
+          example: "pdf"
+        detail_level:
+          type: string
+          example: "detailed"
+        columns:
+          type: array
+          items:
+            type: string
+          example: ["co_insurer", "sales_structure_code"]
+        group_items:
+          type: boolean
+          example: true
+
+    ProductionReportResponse:
+      type: object
+      properties:
+        report_id:
+          type: string
+          example: "report_123456"
+        report_status:
+          type: string
+          example: "completed"
+        report_url:
+          type: string
+          example: "https://api.solutra.com/reports/report_123456/download"
+        requested_at:
+          type: string
+          format: date-time
+          example: "2023-01-31T15:00:00Z"
+        completed_at:
+          type: string
+          format: date-time
+          example: "2023-01-31T15:05:00Z"
+        report_details:
+          type: object
+          properties:
+            period:
+              type: object
+              properties:
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+            detail_level:
+              type: string
+            format:
+              type: string
+            columns_included:
+              type: array
+              items:
+                type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "BadRequest"
+        message:
+          type: string
+          example: "Invalid parameters provided."
+
+paths:
+  /auth/token:
+    post:
+      summary: Authenticate user and get an access token
+      tags:
+        - Auth
+      requestBody:
+        # Request body would be defined here
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "ey...token"
+                  token_type:
+                    type: string
+                    example: "Bearer"
+                  expires_in:
+                    type: integer
+                    example: 3600
+
+  /reports/production:
+    post:
+      summary: Generate a detailed production report
+      tags:
+        - Reports
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductionReportRequest"
+      responses:
+        "200":
+          description: Report generation initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionReportResponse"
+        "400":
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized access, invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden, the user does not have enough permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
